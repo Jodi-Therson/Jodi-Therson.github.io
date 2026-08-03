@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Web</title>
+<meta name="description" content="Portfolio of {name}, student developer focused on software engineering and cybersecurity.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="includes.js" defer></script>
+</head>
+<body>
+
+<site-nav base="."></site-nav>
+
+<header class="hero" id="top">
+  <div class="hero-inner">
+    <p class="kicker">Hi, I'm</p>
+    <h1 class="hero-title">Jodi Therson</h1>
+    <p class="hero-subtitle">Informatics student · Developer · Security · AI Enthusiast</p>
+    <p class="hero-desc">
+      I'm a 2nd-year Informatics student at INSTIKI, mostly interested in how systems break and
+      how to build them so they don't. I split my time between full-stack projects and
+      poking at web security: CTFs, small vulnerable apps, the occasional bug bounty rabbit hole.
+    </p>
+    <div class="hero-actions">
+      <a href="#projects" class="btn btn-primary">View projects</a>
+      <a href="cv.pdf" class="btn btn-ghost">CV (PDF)</a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section class="section" id="about">
+    <p class="section-label">About</p>
+    <div class="section-body">
+      <p class="lead">
+        I got into programming by making small automation scripts, and got into security by
+        accidentally breaking one of my own projects and wanting to know why. Lately I've also
+        been diving into AI/ML, mostly how models can be used for security tooling, and where
+        they introduce new attack surface of their own. Since then I've been pulled in a few
+        directions, I like building products end to end, picking them apart to find where
+        the assumptions fail, and now exploring what AI changes about both.
+      </p>
+      <p>
+        Right now I'm part of my university's cyber student activity unit, working through osint and web
+        exploitation challenges, and building side projects to get more comfortable with
+        real infrastructure: auth flows, APIs, and the small mistakes that turn into big
+        problems. Longer term I'm aiming for a role where I can do both: build things and
+        help keep them safe.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" id="experience">
+    <p class="section-label">Experience</p>
+    <div class="timeline">
+
+      <div class="timeline-item">
+        <div class="timeline-meta">
+          <span class="timeline-date">2024 - Present</span>
+        </div>
+        <div class="timeline-content">
+          <h3>CTF Player</h3>
+          <p class="timeline-org"></p>
+          <p>Compete in a handful of CTFs a year, mostly in web exploitation and OSINT categories. Also mentor beginners getting started with CTFs.</p>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-meta">
+          <span class="timeline-date">2025</span>
+        </div>
+        <div class="timeline-content">
+          <h3>Web Defacement Incident Response</h3>
+          <p class="timeline-org">[REDACTED]</p>
+          <p>Investigated a Laravel application after a defacement incident and traced the root cause to a profile photo upload feature with no file type validation. Resolved it by implementing content-based MIME type validation.</p>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-meta">
+          <span class="timeline-date">2026</span>
+        </div>
+        <div class="timeline-content">
+          <h3>Backdoor Incident Response</h3>
+          <p class="timeline-org">[REDACTED]</p>
+          <p>Audited subdomains on a web hosting panel and found indicators of a backdoor installed on the server. Removed the backdoor and patched the vulnerability in the affected website that had allowed it in.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section" id="projects">
+    <p class="section-label">Projects</p>
+    <div class="project-grid">
+
+      <article class="project-card">
+        <p class="project-tag">Web · Security</p>
+        <h3>OWASP TOP 10 Lab</h3>
+        <p>A collection of intentionally vulnerable web apps covering the OWASP Top 10, each one built to demonstrate a specific vulnerability class (SQLi, XSS, broken access control, etc.) alongside notes on how to find and fix it. Actively growing, a few more categories still to build out.</p>
+        <p class="project-stack">Python · Docker</p>
+        <div class="project-links">
+          <a href="https://github.com/Jodi-Therson/owasp-lab">Code →</a>
+        </div>
+      </article>
+
+      <article class="project-card">
+        <p class="project-tag">AI · Tools</p>
+        <h3>JobPrep AI</h3>
+        <p>A job-prep tool with two parts: a CV reviewer that uses vision-based AI to read and critique resumes, and an interview simulator that runs mock interviews using text-to-speech and speech-to-text. Still a work in progress, but functional end to end.</p>
+        <p class="project-stack">Python · Ollama · TTS/STT</p>
+        <div class="project-links">
+          <a href="https://github.com/Jodi-Therson/jobprep-ai">Code →</a>
+        </div>
+      </article>
+
+      <article class="project-card">
+        <p class="project-tag">Security · Home Lab</p>
+        <h3>Home Lab SIEM &amp; Automated Incident Response</h3>
+        <p>A self-hosted lab for detecting and triaging security events: Wazuh monitors and flags activity as a SIEM, n8n automates the alert-to-case pipeline into IRIS, and verified alerts trigger real-time notifications via Telegram. Built to understand the full detection-to-response loop.</p>
+        <p class="project-stack">Wazuh · n8n · IRIS · Telegram API</p>
+        <div class="project-links">
+          <a href="writing/homelab-siem.html">Read →</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section class="section" id="skills">
+    <p class="section-label">Skills</p>
+    <div class="skills-grid">
+
+      <div class="skill-group">
+        <h3>Languages</h3>
+        <ul class="skill-tags">
+          <li>Python</li><li>PHP</li><li>Bash</li>
+        </ul>
+      </div>
+
+      <div class="skill-group">
+        <h3>Security</h3>
+        <ul class="skill-tags">
+          <li>Burp Suite</li><li>Wireshark</li><li>Nmap</li><li>Metasploit</li>
+        </ul>
+      </div>
+
+      <div class="skill-group">
+        <h3>Tools &amp; infra</h3>
+        <ul class="skill-tags">
+          <li>Git</li><li>Docker</li><li>Linux</li>
+        </ul>
+      </div>
+
+      <div class="skill-group">
+        <h3>Currently learning</h3>
+        <ul class="skill-tags">
+          <li>OWASP TOP 10</li><li>AI Security</li><li>WSTG</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section" id="contact">
+    <p class="section-label">Contact</p>
+    <div class="contact-body">
+      <p class="lead">Open to internships and collaborations. Best way to reach me:</p>
+      <div class="contact-links">
+        <a href="https://github.com/Jodi-Therson" class="contact-link">
+          <span class="contact-key">github</span>
+          <span class="contact-value">github.com/Jodi-Therson</span>
+        </a>
+        <a href="https://linkedin.com/in/jodi-therson" class="contact-link">
+          <span class="contact-key">linkedin</span>
+          <span class="contact-value">linkedin.com/in/jodi-therson</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<site-footer></site-footer>
+
+<script src="script.js"></script>
+</body>
+</html>
