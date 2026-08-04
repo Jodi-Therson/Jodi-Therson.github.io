@@ -17,9 +17,48 @@
 <article class="post-article">
   <a href="index.html" class="back-link">← Back to writing</a>
   <span class="post-date">2026</span>
-  <h1>Home Lab SIEM &amp; Automated Incident Response</h1>
+  <h1>Home Lab SIEM & Automated Incident Response</h1>
 
-  <p>To be filled.</p>
+  <p>I wanted to actually understand what happens after an alert fires, not just set up a SIEM and watch logs come in. So I built out the whole chain: Wazuh detects something, n8n handles the automation, IRIS keeps track of the case, and Telegram pings me so I don't have to babysit a dashboard.</p>
+
+  <h2>Why I built this</h2>
+  <p>Most Wazuh tutorials stop at "install it, see some alerts, done.".
+    I'm curious on seeing what can an alert be processed into and how can someone know what is happening by not having to open the wazuh dashboard everytime.
+  </p>
+
+  <h2>How it's put together</h2>
+  <ul>
+    <li><strong>Wazuh</strong> watches logs and fires alerts based on its rules.</li>
+    <li><strong>n8n</strong> catches those alerts through a webhook, cleans them up, checks for duplicates, then sends them to IRIS.</li>
+    <li><strong>IRIS</strong> is where a case actually gets created once an alert makes it through.</li>
+    <li><strong>Telegram</strong> sends me a message the moment a case is created.</li>
+  </ul>
+
+  <h2>1. Catching the alert</h2>
+  <p>The workflow starts with a webhook that Wazuh hits every time it fires an alert. Not everything is worth acting on though, so I only let alerts through if the rule level is above 7. Anything lower gets dropped right away, no point running low priority noise through the rest of the pipeline.</p>
+
+  <h2>2. Cleaning up the data</h2>
+  <p>The alert from Wazuh includes stuff like the source IP, the agent name, and some other fields. Some of that data could end up getting used further down the line, so I didn't want to just trust whatever came in. If someone could spoof or mess with a field and have it flow straight through, that's basically handing them a way to mess with the pipeline itself. So before anything else happens, this code node checks and cleans the data:</p>
+
+  <p>A few things going on here:</p>
+  <ul>
+    <li>It doesn't just clean the IP, it actually checks if it's a real IPv4 or IPv6 address first. A messy string that gets "cleaned" isn't automatically trustworthy, so bad ones just get thrown out instead of passed along.</li>
+    <li>It strips out characters that get used in shell commands, things like <code>; & | ` ( ) $</code> and quotes, since those are what someone would use to try to inject a command.</li>
+    <li>Nothing gets deleted outright. The original alert still goes through untouched, and the cleaned version sits next to it under <code>_sanitized</code>, so I can always go back and check what the raw data looked like.</li>
+    <li>If something looked off, like an invalid IP or a field that had to be cleaned, it gets logged as a warning instead of just quietly fixed. That way I can also catch someone trying to poke at the pipeline itself.</li>
+  </ul>
+
+  <h2>3. Checking for duplicates</h2>
+  <p>Wazuh will keep firing the same alert over and over if something's still going on, like an ongoing scan hitting the same rule again and again. Without something to catch that, I'd end up with a pile of duplicate cases in IRIS and my phone blowing up with the same Telegram message. So there's a code node that checks the cleaned alert against recent ones, matching on cooldown time (e.g. 15 minutes), and a switch node that either drops it if it's still within the cooldown window, or lets it through if it's new.</p>
+
+  <h2>4. Creating the case in IRIS</h2>
+  <p>Once an alert makes it past the level check, the cleanup, and the dedup check, it gets sent to IRIS through its API, which creates a case with the cleaned data already filled in, the source IP, agent, rule level, and the original alert for reference. This is basically the point where a log line turns into something someone is actually expected to look at.</p>
+
+  <h2>5. Sending the Telegram alert</h2>
+  <p>Once the case exists in IRIS, n8n calls the Telegram bot to send a message with the important details, rule level, source IP, agent, and a link back to the case. This is honestly the part that is used the most day to day. I don't have to keep a dashboard open somewhere, I just get a message when something's actually worth checking.</p>
+
+  <h2>What's next</h2>
+  <p>Right now I'm trying to add a step before the Telegram message that uses AI to summarize the alert into something short and easy to read, instead of just raw fields. Basically turning a rule ID and a block of JSON into a sentence I can understand right from a phone notification. It's not done yet, so for now the message just sends the alert data as it is, but that's what I'm working on next.</p>
 
 </article>
 
